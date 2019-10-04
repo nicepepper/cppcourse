@@ -18,7 +18,8 @@ void onMouseMove(const sf::Event::MouseMoveEvent &event, sf::Vector2f &mousePosi
 void pollEvents(sf::RenderWindow &window, sf::Vector2f &mousePosition);
 sf::Vector2f toEuvclidean(float radius, float angle);
 float toDegrees(float radians);
-void updatePupilElements(const sf::Vector2f &mousePosition, Eye &eye, sf::Vector2f &delta);
+bool isCenterEye(const sf::Vector2f &mousePosition, Eye &eye, sf::Vector2f &delta);
+void updatePupilElements(Eye &eye);
 void update(const sf::Vector2f &mousePosition, Eye &eye);
 void redrawFrame(sf::RenderWindow &window, Eye &eye);
 
@@ -85,24 +86,44 @@ float toDegrees(float radians)
 {
     return float(double(radians) * 180.0 / M_PI);
 }
-void updatePupilElements(const sf::Vector2f &mousePosition, Eye &eye, sf::Vector2f &delta)
+void updatePupilElements(Eye &eye)
 {
     sf::Vector2f trackRadius = {20.f, 40.f};
-    float R = float(delta.y) / float(std::sin(eye.angle));
-    float r1 = float() std::cos(eye.angle) float r2 if (R > r)
+    eye.pupilOfTheEye.setPosition({eye.position.x + (trackRadius.x * std::cos(eye.angle)), eye.position.y + (trackRadius.y * std::sin(eye.angle))});
+}
+bool isCenterEye(const sf::Vector2f &mousePosition, Eye &eye, sf::Vector2f &delta)
+{
+    float ellipsRadius = float(800) / std::sqrt(float((std::pow(std::cos(eye.angle), 2) * 1600) + (400 * (std::pow(std::sin(eye.angle), 2)))));
+    float mouseRadius = 0;
+    if (((1.f < eye.angle) & (eye.angle < 3.f)) || ((-1.f > eye.angle) & (eye.angle > -3.f)))
     {
-        eye.pupilOfTheEye.setPosition({eye.position.x + (trackRadius.x * std::cos(eye.angle)), eye.position.y + (trackRadius.y * std::sin(eye.angle))});
+        mouseRadius = float(delta.y) / float(std::sin(eye.angle));
     }
     else
     {
-        eye.pupilOfTheEye.setPositon(mousePosition);
+        mouseRadius = float(delta.x) / float(std::cos(eye.angle));
+    }
+    if (ellipsRadius > mouseRadius)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 void update(const sf::Vector2f &mousePosition, Eye &eye)
 {
     sf::Vector2f delta = mousePosition - eye.position;
     eye.angle = std::atan2(delta.y, delta.x);
-    updatePupilElements(eye, mousePosition, delta);
+    if (isCenterEye(mousePosition, eye, delta))
+    {
+        eye.pupilOfTheEye.setPosition(mousePosition);
+    }
+    else
+    {
+        updatePupilElements(eye);
+    }
 }
 void redrawFrame(sf::RenderWindow &window, Eye &eye)
 {
@@ -114,8 +135,8 @@ int main()
 {
     constexpr unsigned WINDOW_WIDTH = 900;
     constexpr unsigned WINDOW_HEIGHT = 600;
-    sf::Vector2f POSITION_FIRST_EYE = {300, 300};
-    sf::Vector2f POSITION_SECOND_EYE = {450, 300};
+    sf::Vector2f POSITION_FIRST_EYE = {380, 300};
+    sf::Vector2f POSITION_SECOND_EYE = {520, 300};
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
